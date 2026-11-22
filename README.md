@@ -1,296 +1,283 @@
+<div align="center">
+
 # ⚡ IntentFlow
+### *Turn Natural Language Into Scheduled Tasks & Automated Reminders*
 
-<p align="center">
-  <b>Turn your natural language into scheduled tasks & automated reminders.</b><br>
-  <i>A beautiful, responsive cross-platform Flutter application powered by Firebase and a custom Neumorphic design system.</i>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
-  <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" />
-  <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" />
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-blue?style=for-the-badge" alt="Platforms" />
-  <img src="https://img.shields.io/badge/Design-Neumorphic-6558D3?style=for-the-badge" alt="Design System" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
-</p>
+A high-performance, cross-platform productivity application built with **Flutter** and **Firebase**, featuring an adaptive **Neumorphic design system**, an on-device **NLP intent parsing engine**, and **real-time cloud synchronization**.
 
 ---
 
-## 📖 Table of Contents
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20FCM-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue?logo=googlechrome&logoColor=white)](#-responsive-design)
+[![UI Style](https://img.shields.io/badge/Design-Neumorphism-6558D3)](lib/theme.dart)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Natural Language Parser](#-natural-language-parser)
-- [User Interface & Neumorphism](#-user-interface--neumorphism)
-- [Architecture & Tech Stack](#-architecture--tech-stack)
-- [Folder Structure](#-folder-structure)
-- [Firebase & Data Model](#-firebase--data-model)
-- [Authentication Flow](#-authentication-flow)
-- [Notifications System](#-notifications-system)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Setup & Configuration](#setup--configuration)
-  - [Running the App](#running-the-app)
-- [Firestore Security Rules](#-firestore-security-rules)
-- [Contributing & License](#-contributing--license)
+<br/>
+
+[Architecture](#-live-system-architecture) • [Data Flow](#-live-data-flow) • [Features](#-key-features) • [Intent Parser](#-natural-language-parser) • [Setup Guide](#-getting-started) • [Security](#-firestore-security-rules)
+
+</div>
 
 ---
 
-## 🌟 Overview
+## 🏛️ Live System Architecture
 
-**IntentFlow** bridges the gap between quick thoughts and structured task management. Instead of manually filling forms, picking dates, and selecting categories, you can simply type or speak your intent—such as:
+The following diagram illustrates the live architecture of IntentFlow, from user input on client platforms down to reactive state management, background daemons, and cloud infrastructure:
 
-> *"Remind me to review the quarterly budget tomorrow at 4 PM"*  
-> *"Workout every day at 7:00 AM"*
+```mermaid
+flowchart TD
+    subgraph Client["📱 Flutter Client Application (Android / iOS / Web)"]
+        direction TB
+        
+        subgraph UI["🎨 Neumorphic Presentation Layer"]
+            Shell["📐 Responsive Shell Router<br/><i>Desktop Sidebar (≥900px) | Mobile Dock (&lt;900px)</i>"]
+            Screens["🖥️ Screens<br/><i>HomeScreen • TasksScreen • CalendarScreen • HistoryScreen</i>"]
+            Shell --- Screens
+        end
 
-IntentFlow intelligently parses your command in real time, automatically extracts the task title, calculates relative dates, assigns times, configures repeating schedules, tags relevant categories, and schedules high-priority push reminders.
+        subgraph Core["🧠 Intent & State Core"]
+            Parser["⚡ IntentParser<br/><i>On-Device Regex NLP Engine</i>"]
+            TaskCtrl["🔄 TaskController<br/><i>ChangeNotifier • Reactive State</i>"]
+            ShellCtrl["🧭 ShellController<br/><i>Navigation & View State</i>"]
+        end
+
+        subgraph Services["🔌 Services Layer"]
+            AuthSvc["🔐 AuthService<br/><i>Email/Password & Google OAuth</i>"]
+            TaskSvc["📋 TaskService<br/><i>Firestore CRUD & Stream Subscriptions</i>"]
+            NotifSvc["🔔 NotificationService<br/><i>Alarm Scheduler & FCM Manager</i>"]
+        end
+    end
+
+    subgraph Cloud["☁️ Firebase Cloud Infrastructure"]
+        FBAuth[("🔑 Firebase Auth<br/><i>Identity & Token Management</i>")]
+        Firestore[("🔥 Cloud Firestore<br/><i>users/{uid}/tasks/{taskId} + Offline Cache</i>")]
+        FCM[("📡 Firebase Cloud Messaging<br/><i>Background Push Alerts</i>")]
+    end
+
+    subgraph OS["⏱️ Native OS Daemon"]
+        LocalAlarms["⏰ Local Notification Plugin<br/><i>Timezone-Aware Exact Alarms</i>"]
+    end
+
+    %% User Interaction & Flow
+    Screens -->|"1. User enters natural command"| Parser
+    Parser -->|"2. Extracts Title, Date, Time, Repeat, Category"| TaskCtrl
+    TaskCtrl -->|"3. Dispatches Task Mutation"| TaskSvc
+    TaskCtrl -->|"4. Registers Timezone Alert"| NotifSvc
+    ShellCtrl -->|"Manages active view"| Shell
+
+    %% Service Integration
+    TaskSvc <-->|"Real-Time Snapshots & Offline Sync"| Firestore
+    AuthSvc <-->|"Session State (userChanges)"| FBAuth
+    NotifSvc -->|"Registers FCM Device Token"| FCM
+    NotifSvc -->|"Schedules Precise Native Alarms"| LocalAlarms
+```
+
+---
+
+## 🔄 Live Data Flow
+
+Here is how an everyday natural language phrase is parsed, stored in the cloud, and turned into an OS-level notification in real time:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 User
+    participant UI as 🎨 Neumorphic UI
+    participant Parser as ⚡ IntentParser
+    participant State as 🔄 TaskController
+    participant Firestore as 🔥 Cloud Firestore
+    participant Notif as 🔔 NotificationService
+    participant OS as ⏰ Native OS Alarm
+
+    User->>UI: Types "Remind me to review design tomorrow at 4pm"
+    UI->>Parser: parse("Remind me to review design tomorrow at 4pm")
+    Parser-->>UI: IntentDraft { Title: "Review design", Date: +1 Day, Time: 16:00, Repeat: "None", Category: "Work" }
+    
+    User->>UI: Clicks "Schedule Task"
+    UI->>State: addTask(intentDraft)
+    
+    par Cloud Sync
+        State->>Firestore: users/{uid}/tasks.add(...)
+        Firestore-->>State: Real-time Snapshot Stream Triggered
+        State-->>UI: Updates Task List & Daily Completion Ring
+    and Local Notification Scheduling
+        State->>Notif: scheduleNotification(task)
+        Notif->>OS: Android/iOS Exact Timezone Alarm Set
+        Note over OS: Fires high-priority alert at scheduled time
+    end
+```
 
 ---
 
 ## ✨ Key Features
 
-- **🧠 Smart Natural Language Parsing:** Dynamic rule-based intent engine that translates conversational phrases into fully formed tasks relative to the current date and time.
-- **🎨 Neumorphic UI Design:** Soft lighting, extruded cards, recessed inputs, and tactile shadows tuned for modern aesthetics.
-- **📱 True Cross-Platform Responsiveness:**
-  - **Desktop / Web (≥ 900 px):** Floating neumorphic sidebar, persistent top header, multi-column dashboard, and split-screen auth layout.
-  - **Mobile (< 900 px):** Clean single-column layout with a floating neumorphic bottom navigation dock.
-- **⚡ Real-Time Cloud Sync:** Backed by Google Cloud Firestore with real-time listeners and offline cache persistence.
-- **🔔 Notifications & Reminders:** Timezone-aware scheduled local notifications and background push notification support via Firebase Cloud Messaging (FCM).
-- **📅 Interactive Calendar:** Visual date-picker and monthly calendar integration (`table_calendar`) to inspect scheduled tasks by day.
-- **📊 Progress Tracking & History:** Real-time circular completion ring, category color tagging, and a historical archive of completed tasks.
-- **🔐 Enterprise-Grade Security:** Firebase Auth with Email/Password, Google Sign-In, strict Firestore rules, re-authenticated password changes, and account deletion.
+| Feature | Description | Architecture Component |
+| :--- | :--- | :--- |
+| **🧠 NLP Intent Engine** | Parses plain text into dates, times, frequencies, and auto-tagged categories. | [`IntentParser`](lib/utils/intent_parser.dart) |
+| **🎨 Neumorphic Design** | Custom soft shadows, extruded tactile buttons, and inset inputs. | [`AppColors & NeuSurface`](lib/theme.dart) |
+| **📱 Adaptive Layout** | Collapsible sidebar for desktop/web (≥900px), floating dock for mobile. | [`Responsive Widgets`](lib/widgets/responsive.dart) |
+| **⚡ Real-Time Cloud Sync**| Firestore collection listeners with automatic local offline caching. | [`TaskService`](lib/services/task_service.dart) |
+| **🔔 Smart Alarms** | Exact timezone notifications on device + FCM background push integration. | [`NotificationService`](lib/services/notification_service.dart) |
+| **📅 Visual Calendar** | Monthly and weekly calendar view integrated with daily agenda lists. | [`CalendarScreen`](lib/screens/main/calendar_screen.dart) |
+| **📊 Progress Analytics** | Circular completion ring and real-time task distribution metrics. | [`HomeScreen`](lib/screens/main/home_screen.dart) |
+| **🔐 Secure Auth** | Email/Password, Google OAuth, password reset, and account deletion. | [`AuthService`](lib/services/auth_service.dart) |
 
 ---
 
-## 🤖 Natural Language Parser
+## ⚡ Natural Language Parser
 
-IntentFlow includes an in-app rule-based natural language parser (`IntentParser`) that converts everyday speech patterns into structured task drafts:
+The parser runs **100% locally on-device**, ensuring instant response times without network latency or external API costs:
 
-| User Input Command | Extracted Title | Date | Time | Repeat | Category |
-|---|---|---|---|---|---|
-| `"Remind me to submit the client report tomorrow at 3pm"` | **Submit the client report** | Tomorrow | `15:00` | None | Work |
-| `"Schedule team standup next week at 10am every week"` | **Team standup** | +7 Days | `10:00` | Weekly | Work |
-| `"Workout daily at 7:30am"` | **Workout** | Today | `07:30` | Daily | Health |
-| `"Call mom today at 6pm"` | **Call mom** | Today | `18:00` | None | Personal |
-
-> [!TIP]
-> The parser automatically sanitizes intent prefixes (`"please remind me to"`, `"i need to"`, `"add a task to"`) and capitalizes the resulting task title cleanly.
+| Natural Language Input | Extracted Title | Scheduled Date | Scheduled Time | Interval | Category |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `"Remind me to call John tomorrow at 3pm"` | **Call John** | Tomorrow | `15:00` | None | Personal |
+| `"Gym workout every day at 6:30am"` | **Gym workout** | Today | `06:30` | Daily | Health |
+| `"Schedule team standup next week at 10am"`| **Team standup** | +7 Days | `10:00` | Weekly | Work |
+| `"Pay electricity bill at 5pm"` | **Pay electricity bill** | Today | `17:00` | None | Work |
 
 ---
 
-## 🎨 User Interface & Neumorphism
+## 📱 Responsive Design
 
-IntentFlow features a custom neumorphic design system built from scratch in Flutter, featuring soft, extruded lighting and depth:
+IntentFlow automatically detects window size and adapts its structural shell seamlessly:
 
-- **Soft Shadows:** Dual-directional box shadows (light specular highlight offset top-left, dark ambient shadow bottom-right).
-- **Surfaces (`NeuSurface`):** Elevated neumorphic cards and inset input fields.
-- **Typography:** Harmonious pairings of **DM Sans** for legible body text and **Manrope** for bold headings via Google Fonts.
-- **Adaptive Layout Switching:**
+<div align="center">
 
-```
-+---------------------------------------------------------------------------------+
-|                                 DESKTOP / WEB                                  |
-|  +--------------+  +---------------------------------------------------------+  |
-|  |  IntentFlow  |  |  Top Bar (Title, User Profile, Notifications)           |  |
-|  |  ----------  |  +---------------------------------------------------------+  |
-|  |  [o] Home    |  |  +-------------------------+  +----------------------+  |  |
-|  |  [ ] Tasks   |  |  | Intent Input Bar        |  | Daily Progress Ring  |  |  |
-|  |  [ ] Calendar|  |  | Upcoming Tasks List     |  | Mini Calendar View   |  |  |
-|  |  [ ] History |  |  | Filter & Categories     |  | Coming Up List       |  |  |
-|  |  [ ] Profile |  |  +-------------------------+  +----------------------+  |  |
-|  +--------------+  +---------------------------------------------------------+  |
-+---------------------------------------------------------------------------------+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                        DESKTOP & WEB (≥ 900px)                         │
+├───────────────┬────────────────────────────────────────────────────────┤
+│  IntentFlow   │ Top Bar: View Title • Profile • Notification Bell      │
+│  ───────────  ├────────────────────────────┬───────────────────────────┤
+│  [●] Home     │ ⚡ Natural Language Input  │ 📊 Daily Progress Ring    │
+│  [ ] Tasks    │ ────────────────────────── │ ───────────────────────── │
+│  [ ] Calendar │ 📋 Filterable Task Cards   │ 📅 Mini Calendar Preview  │
+│  [ ] History  │   • Check-off toggles      │ ⏰ Upcoming Agenda Items  │
+│  [ ] Profile  │   • Color-coded category   │                           │
+└───────────────┴────────────────────────────┴───────────────────────────┘
 
-+-------------------------------------+
-|               MOBILE                |
-|  +-------------------------------+  |
-|  | Header & Greeting             |  |
-|  +-------------------------------+  |
-|  | Natural Language Command Bar  |  |
-|  | Today's Progress & Tasks      |  |
-|  | Scrollable Task Cards         |  |
-|  +-------------------------------+  |
-|  | [=] Floating Neumorphic Nav   |  |
-|  +-------------------------------+  |
-+-------------------------------------+
+┌──────────────────────────────────────┐
+│           MOBILE (< 900px)           │
+├──────────────────────────────────────┤
+│ ⚡ Intent Command Bar                 │
+│ 📊 Progress Summary Ring             │
+│ 📋 Scrollable Task Cards             │
+├──────────────────────────────────────┤
+│ [ Home | Tasks | Cal | Hist | Prof ] │  ◄── Floating Neumorphic Dock
+└──────────────────────────────────────┘
 ```
 
----
-
-## 🛠️ Architecture & Tech Stack
-
-IntentFlow follows a clean, reactive architecture with separated concerns:
-
-- **Core Framework:** [Flutter](https://flutter.dev) (Dart SDK `>=3.3.0 <4.0.0`)
-- **State Management:** [Provider](https://pub.dev/packages/provider) (`MultiProvider`, `ChangeNotifierProvider`)
-- **Authentication:** [Firebase Authentication](https://firebase.google.com/products/auth) + [Google Sign-In](https://pub.dev/packages/google_sign_in)
-- **Database:** [Cloud Firestore](https://firebase.google.com/products/firestore) (with offline persistence)
-- **Calendar:** [TableCalendar](https://pub.dev/packages/table_calendar)
-- **Notifications:** [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications), [firebase_messaging](https://pub.dev/packages/firebase_messaging), [timezone](https://pub.dev/packages/timezone)
-- **Typography:** [google_fonts](https://pub.dev/packages/google_fonts) (Manrope & DM Sans)
-- **Preferences:** [shared_preferences](https://pub.dev/packages/shared_preferences)
+</div>
 
 ---
 
-## 📂 Folder Structure
+## 📂 Project Structure
 
 ```text
 lib/
-├── firebase_options.dart         # Auto-generated Firebase multiplatform options
-├── main.dart                     # App entry point, Firebase & Notification bootstrap
-├── theme.dart                    # Design system, colors, neumorphic shadows, typography
+├── firebase_options.dart          # Multiplatform Firebase bootstrap configuration
+├── main.dart                      # Application root & service initialization
+├── theme.dart                     # Neumorphic color palette, shadows & typography
 │
 ├── models/
-│   └── task_model.dart           # Task data model, Firestore serialization & factories
+│   └── task_model.dart            # Task entity, serialization, and category styles
 │
 ├── screens/
-│   ├── auth/
-│   │   ├── auth_flow.dart        # Switcher between Login and Register views
-│   │   ├── auth_gate.dart        # StreamBuilder gate listening to userChanges()
-│   │   ├── auth_widgets.dart     # Brand panels, text inputs, social sign-in buttons
-│   │   ├── login_screen.dart     # Neumorphic login screen & forgot password dialog
-│   │   └── register_screen.dart  # Sign-up screen with name & validation
-│   └── main/
-│       ├── calendar_screen.dart  # Monthly & weekly calendar view with day agendas
-│       ├── history_screen.dart   # Completed task logs & archive management
-│       ├── home_screen.dart      # Primary dashboard: hero stats, command bar, tasks
-│       ├── home_shell.dart       # Responsive shell: Sidebar (Desktop) / Bottom Nav (Mobile)
-│       ├── intent_screen.dart    # Dedicated intent parser tester & task creator
-│       ├── profile_screen.dart   # User profile, password reset, account deletion
-│       ├── success_screen.dart   # Confirmation screen after task creation
-│       └── tasks_screen.dart     # Comprehensive filterable task list (All/Done/Pending)
+│   ├── auth/                      # Login, Registration, Auth Gate & Social Auth
+│   └── main/                      # Home, Tasks, Calendar, History, Intent & Profile
 │
 ├── services/
-│   ├── auth_service.dart         # Firebase Auth & Google Sign-In service
-│   ├── notification_service.dart # Local notifications, FCM background handler, timezone scheduler
-│   ├── task_controller.dart      # Provider ChangeNotifier managing active task state
-│   └── task_service.dart         # Firestore CRUD operations & real-time streams
+│   ├── auth_service.dart          # Firebase Auth & Google Sign-In handler
+│   ├── notification_service.dart  # Timezone scheduling & FCM background worker
+│   ├── task_controller.dart       # Reactive state controller for tasks & progress
+│   └── task_service.dart          # Firestore streams, queries, and transactions
 │
 ├── utils/
-│   ├── intent_parser.dart        # Regex-powered NLP parser converting text into tasks
-│   └── validators.dart           # Input validation for email, passwords, and task titles
+│   ├── intent_parser.dart         # Rule-based NLP extraction engine
+│   └── validators.dart            # Strong password, email, and input sanitizers
 │
 └── widgets/
-    ├── common.dart               # Neumorphic buttons, surfaces, text fields, chips
-    ├── notifications.dart        # Notification bell icon & in-app notification center modal
-    └── responsive.dart           # Screen breakpoint helpers (isDesktop, TwoColumn, NeuSurface)
+    ├── common.dart                # Neumorphic buttons, cards, text fields, chips
+    ├── notifications.dart         # In-app notification center modal & badge
+    └── responsive.dart            # Adaptive layout engine (Desktop vs. Mobile)
 ```
-
----
-
-## 🗄️ Firebase & Data Model
-
-Cloud Firestore enforces an isolated subcollection model under each user's unique identifier (`uid`):
-
-```
-users/{uid}
-  ├── name: String
-  ├── email: String
-  ├── photoUrl: String?
-  ├── createdAt: Timestamp
-  └── lastLoginAt: Timestamp
-      └── tasks/{taskId}
-            ├── title: String (1-200 chars)
-            ├── category: String ("Work" | "Personal" | "Health")
-            ├── color: String ("purple" | "blue" | "orange" | "green")
-            ├── date: String ("YYYY-MM-DD")
-            ├── time: String ("HH:mm")
-            ├── repeat: String ("None" | "Daily" | "Weekly")
-            ├── done: Boolean
-            ├── createdAt: Timestamp
-            └── updatedAt: Timestamp
-```
-
----
-
-## 🔒 Authentication Flow
-
-| Action | Implementation | Notes |
-|---|---|---|
-| **Email/Password Sign-Up** | `AuthService.register` | Automatically updates user profile display name. |
-| **Email/Password Sign-In** | `AuthService.signIn` | Clean, user-friendly error translations. |
-| **Google Sign-In** | `AuthService.signInWithGoogle` | Native OAuth on Android, iOS, and Web. |
-| **Password Reset** | `showForgotPasswordDialog` | Sends Firebase password reset email. |
-| **Auth Routing** | `AuthGate` | Reactive stream via `FirebaseAuth.instance.userChanges()`. |
-| **Change Password** | `AuthService.changePassword` | Re-authenticates with current password prior to update. |
-| **Account Deletion** | `AuthService.deleteAccount` | Cascading cleanup: deletes tasks, profile document, and auth account. |
-| **Sign Out** | `AuthService.signOut` | Clears both Firebase Auth session and Google Sign-In cache. |
-
----
-
-## 🔔 Notifications System
-
-IntentFlow features a complete notification pipeline configured for Android, iOS, and Web:
-
-- **High-Priority Channel (`intentflow_reminders`):** Configured with maximum importance, vibration, sound, and badge indicators.
-- **Scheduled Timezone Reminders:** Uses `timezone` and `flutter_local_notifications` to trigger alarms at the exact scheduled task time.
-- **FCM Push Handling:** Background message handler registered via `@pragma('vm:entry-point')` for remote server alerts.
-- **In-App Notification Center:** Accessible via the top bar bell icon to inspect recent alerts and task triggers.
 
 ---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+<details open>
+<summary><b>1. Prerequisites</b></summary>
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (`>= 3.3.0`)
-- [Dart SDK](https://dart.dev/get-dart)
-- [Firebase CLI](https://firebase.google.com/docs/cli) (`firebase-tools`)
-- Android Studio / Xcode (for device emulators and toolchains)
+- [Dart SDK](https://dart.dev/get-dart) (`>= 3.3.0 < 4.0.0`)
+- [Firebase CLI](https://firebase.google.com/docs/cli)
+- Android Studio / Xcode (for device emulators and platform toolchains)
 
-### Setup & Configuration
+</details>
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/intentflow.git
-   cd intentflow
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Configure Firebase:**
-   Activate the FlutterFire CLI and link your Firebase project:
-   ```bash
-   dart pub global activate flutterfire_cli
-   flutterfire configure
-   ```
-   *This command configures Android, iOS, and Web targets and writes `lib/firebase_options.dart`.*
-
-4. **Firebase Console Configuration:**
-   - **Authentication:** Enable **Email/Password** and **Google** under *Authentication > Sign-in method*.
-   - **Firestore:** Create a Cloud Firestore database in production or test mode.
-   - **Deploy Security Rules:**
-     ```bash
-     firebase deploy --only firestore:rules
-     ```
-   - **Android Google Sign-In:** Generate your SHA-1 and SHA-256 keys:
-     ```bash
-     cd android && ./gradlew signingReport
-     ```
-     Add both fingerprints to your Android App settings in the Firebase Console and replace `android/app/google-services.json`.
-   - **iOS Setup:** Add the `REVERSED_CLIENT_ID` from your `GoogleService-Info.plist` as a URL scheme inside `ios/Runner/Info.plist`.
-
-### Running the App
+<details open>
+<summary><b>2. Installation & Setup</b></summary>
 
 ```bash
-# Run on an active mobile device or emulator
+# 1. Clone repository
+git clone https://github.com/your-username/intentflow.git
+cd intentflow
+
+# 2. Install dependencies
+flutter pub get
+
+# 3. Configure Firebase project
+dart pub global activate flutterfire_cli
+flutterfire configure
+
+# 4. Deploy Firestore security rules
+firebase deploy --only firestore:rules
+```
+
+</details>
+
+<details>
+<summary><b>3. Platform-Specific Setup (Android & iOS)</b></summary>
+
+### Android
+- **Google Sign-In**: Generate your signing certificate fingerprints:
+  ```bash
+  cd android && ./gradlew signingReport
+  ```
+  Add both `SHA-1` and `SHA-256` into your Firebase Console Android app settings, then re-download `google-services.json` into `android/app/`.
+
+### iOS
+- In `ios/Runner/Info.plist`, verify that the `REVERSED_CLIENT_ID` from your `GoogleService-Info.plist` is registered as a URL scheme.
+
+</details>
+
+<details open>
+<summary><b>4. Running the App</b></summary>
+
+```bash
+# Run on an attached mobile device or emulator
 flutter run
 
-# Run on Chrome (Web)
+# Run on Web (Chrome)
 flutter run -d chrome
 
-# Run with release mode
+# Run in release mode
 flutter run --release
 ```
+
+</details>
 
 ---
 
 ## 🛡️ Firestore Security Rules
 
-The application uses zero-trust Firestore security rules located in [`firestore.rules`](file:///c:/Projects/pdd/internflow/firestore.rules). Every operation is strictly authorized:
+Cloud Firestore enforces user-isolated access controls defined in [`firestore.rules`](firestore.rules):
+
+<details>
+<summary><b>View firestore.rules</b></summary>
 
 ```javascript
 rules_version = '2';
@@ -313,7 +300,7 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, create, update, delete: if isOwner(uid);
 
-      match/tasks/{taskId} {
+      match /tasks/{taskId} {
         allow read, delete: if isOwner(uid);
         allow create, update: if isOwner(uid) && validTask(request.resource.data);
       }
@@ -324,22 +311,12 @@ service cloud.firestore {
 }
 ```
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to open issues or submit pull requests.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+</details>
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 #   I n t e n t - F l o w  
  
