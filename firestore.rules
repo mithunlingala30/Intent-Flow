@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    function validTask(d) {
+      return d.keys().hasOnly(['title','category','color','date','time','repeat','done','createdAt','updatedAt'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 200
+        && d.category in ['Work','Personal','Health']
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && d.time is string && d.time.matches('^[0-9]{2}:[0-9]{2}$')
+        && d.repeat in ['None','Daily','Weekly']
+        && d.done is bool;
+    }
+
+    // Profile + tasks: owner only.
+    match /users/{uid} {
+      allow read, create, update, delete: if isOwner(uid);
+
+      match /tasks/{taskId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validTask(request.resource.data);
+      }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
