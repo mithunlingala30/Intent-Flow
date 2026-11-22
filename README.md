@@ -1,30 +1,22 @@
-<div align="center">
-
 # ⚡ IntentFlow
-### *Turn Natural Language Into Scheduled Tasks & Automated Reminders*
 
-A high-performance, cross-platform productivity application built with **Flutter** and **Firebase**, featuring an adaptive **Neumorphic design system**, an on-device **NLP intent parsing engine**, and **real-time cloud synchronization**.
-
----
+> **Turn Natural Language Into Scheduled Tasks & Automated Reminders**  
+> A high-performance, cross-platform productivity application built with **Flutter** and **Firebase**, featuring an adaptive **Neumorphic design system**, an on-device **NLP intent parsing engine**, and **real-time cloud synchronization**.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20FCM-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web-blue?logo=googlechrome&logoColor=white)](#-responsive-design)
-[![UI Style](https://img.shields.io/badge/Design-Neumorphism-6558D3)](lib/theme.dart)
+[![Design](https://img.shields.io/badge/Design-Neumorphism-6558D3)](lib/theme.dart)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-<br/>
-
-[Architecture](#-live-system-architecture) • [Data Flow](#-live-data-flow) • [Features](#-key-features) • [Intent Parser](#-natural-language-parser) • [Setup Guide](#-getting-started) • [Security](#-firestore-security-rules)
-
-</div>
+[Architecture](#-live-system-architecture) • [Data Flow](#-live-data-flow) • [Features](#-key-features) • [Intent Parser](#-natural-language-parser) • [Responsive Design](#-responsive-design) • [Setup Guide](#-getting-started) • [Security](#-firestore-security-rules)
 
 ---
 
 ## 🏛️ Live System Architecture
 
-The following diagram illustrates the live architecture of IntentFlow, from user input on client platforms down to reactive state management, background daemons, and cloud infrastructure:
+The following diagram illustrates the complete system architecture of IntentFlow, from user input across client platforms down to reactive state management, background daemons, and cloud infrastructure:
 
 ```mermaid
 flowchart TD
@@ -32,32 +24,32 @@ flowchart TD
         direction TB
         
         subgraph UI["🎨 Neumorphic Presentation Layer"]
-            Shell["📐 Responsive Shell Router<br/><i>Desktop Sidebar (≥900px) | Mobile Dock (&lt;900px)</i>"]
-            Screens["🖥️ Screens<br/><i>HomeScreen • TasksScreen • CalendarScreen • HistoryScreen</i>"]
+            Shell["Responsive Shell Router<br/>(Desktop Sidebar ≥900px | Mobile Dock <900px)"]
+            Screens["App Screens<br/>(HomeScreen • TasksScreen • CalendarScreen • HistoryScreen)"]
             Shell --- Screens
         end
 
         subgraph Core["🧠 Intent & State Core"]
-            Parser["⚡ IntentParser<br/><i>On-Device Regex NLP Engine</i>"]
-            TaskCtrl["🔄 TaskController<br/><i>ChangeNotifier • Reactive State</i>"]
-            ShellCtrl["🧭 ShellController<br/><i>Navigation & View State</i>"]
+            Parser["IntentParser<br/>(On-Device NLP Regex Engine)"]
+            TaskCtrl["TaskController<br/>(ChangeNotifier • Reactive State)"]
+            ShellCtrl["ShellController<br/>(Navigation & View State)"]
         end
 
         subgraph Services["🔌 Services Layer"]
-            AuthSvc["🔐 AuthService<br/><i>Email/Password & Google OAuth</i>"]
-            TaskSvc["📋 TaskService<br/><i>Firestore CRUD & Stream Subscriptions</i>"]
-            NotifSvc["🔔 NotificationService<br/><i>Alarm Scheduler & FCM Manager</i>"]
+            AuthSvc["AuthService<br/>(Email/Password & Google OAuth)"]
+            TaskSvc["TaskService<br/>(Firestore CRUD & Real-Time Streams)"]
+            NotifSvc["NotificationService<br/>(Timezone Scheduler & FCM)"]
         end
     end
 
     subgraph Cloud["☁️ Firebase Cloud Infrastructure"]
-        FBAuth[("🔑 Firebase Auth<br/><i>Identity & Token Management</i>")]
-        Firestore[("🔥 Cloud Firestore<br/><i>users/{uid}/tasks/{taskId} + Offline Cache</i>")]
-        FCM[("📡 Firebase Cloud Messaging<br/><i>Background Push Alerts</i>")]
+        FBAuth[("Firebase Auth<br/>(Identity & Tokens)")]
+        Firestore[("Cloud Firestore<br/>(users/{uid}/tasks + Offline Cache)")]
+        FCM[("Firebase Cloud Messaging<br/>(Background Push Alerts)")]
     end
 
     subgraph OS["⏱️ Native OS Daemon"]
-        LocalAlarms["⏰ Local Notification Plugin<br/><i>Timezone-Aware Exact Alarms</i>"]
+        LocalAlarms["Local Notification Manager<br/>(Exact Timezone Alarms)"]
     end
 
     %% User Interaction & Flow
@@ -83,17 +75,17 @@ Here is how an everyday natural language phrase is parsed, stored in the cloud, 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 👤 User
-    participant UI as 🎨 Neumorphic UI
-    participant Parser as ⚡ IntentParser
-    participant State as 🔄 TaskController
-    participant Firestore as 🔥 Cloud Firestore
-    participant Notif as 🔔 NotificationService
-    participant OS as ⏰ Native OS Alarm
+    actor User as User
+    participant UI as Neumorphic UI
+    participant Parser as IntentParser
+    participant State as TaskController
+    participant Firestore as Cloud Firestore
+    participant Notif as NotificationService
+    participant OS as Native OS Alarm
 
     User->>UI: Types "Remind me to review design tomorrow at 4pm"
     UI->>Parser: parse("Remind me to review design tomorrow at 4pm")
-    Parser-->>UI: IntentDraft { Title: "Review design", Date: +1 Day, Time: 16:00, Repeat: "None", Category: "Work" }
+    Parser-->>UI: IntentDraft (Title: Review design, Date: Tomorrow, Time: 16:00, Category: Work)
     
     User->>UI: Clicks "Schedule Task"
     UI->>State: addTask(intentDraft)
@@ -141,9 +133,7 @@ The parser runs **100% locally on-device**, ensuring instant response times with
 
 ## 📱 Responsive Design
 
-IntentFlow automatically detects window size and adapts its structural shell seamlessly:
-
-<div align="center">
+IntentFlow automatically detects screen width and adapts its navigation shell:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -168,8 +158,6 @@ IntentFlow automatically detects window size and adapts its structural shell sea
 │ [ Home | Tasks | Cal | Hist | Prof ] │  ◄── Floating Neumorphic Dock
 └──────────────────────────────────────┘
 ```
-
-</div>
 
 ---
 
@@ -208,18 +196,14 @@ lib/
 
 ## 🚀 Getting Started
 
-<details open>
-<summary><b>1. Prerequisites</b></summary>
+### 1. Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (`>= 3.3.0`)
 - [Dart SDK](https://dart.dev/get-dart) (`>= 3.3.0 < 4.0.0`)
 - [Firebase CLI](https://firebase.google.com/docs/cli)
 - Android Studio / Xcode (for device emulators and platform toolchains)
 
-</details>
-
-<details open>
-<summary><b>2. Installation & Setup</b></summary>
+### 2. Installation & Setup
 
 ```bash
 # 1. Clone repository
@@ -237,25 +221,17 @@ flutterfire configure
 firebase deploy --only firestore:rules
 ```
 
-</details>
+### 3. Platform Setup (Android & iOS)
 
-<details>
-<summary><b>3. Platform-Specific Setup (Android & iOS)</b></summary>
-
-### Android
-- **Google Sign-In**: Generate your signing certificate fingerprints:
+- **Android Google Sign-In**: Generate your signing certificate fingerprints:
   ```bash
   cd android && ./gradlew signingReport
   ```
-  Add both `SHA-1` and `SHA-256` into your Firebase Console Android app settings, then re-download `google-services.json` into `android/app/`.
+  Add both `SHA-1` and `SHA-256` into your Firebase Console Android app settings, then place `google-services.json` into `android/app/`.
 
-### iOS
-- In `ios/Runner/Info.plist`, verify that the `REVERSED_CLIENT_ID` from your `GoogleService-Info.plist` is registered as a URL scheme.
+- **iOS Setup**: In `ios/Runner/Info.plist`, ensure the `REVERSED_CLIENT_ID` from `GoogleService-Info.plist` is registered as a URL scheme.
 
-</details>
-
-<details open>
-<summary><b>4. Running the App</b></summary>
+### 4. Running the App
 
 ```bash
 # Run on an attached mobile device or emulator
@@ -268,16 +244,11 @@ flutter run -d chrome
 flutter run --release
 ```
 
-</details>
-
 ---
 
 ## 🛡️ Firestore Security Rules
 
 Cloud Firestore enforces user-isolated access controls defined in [`firestore.rules`](firestore.rules):
-
-<details>
-<summary><b>View firestore.rules</b></summary>
 
 ```javascript
 rules_version = '2';
@@ -311,12 +282,8 @@ service cloud.firestore {
 }
 ```
 
-</details>
-
 ---
 
 ## 📄 License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
-#   I n t e n t - F l o w  
- 
